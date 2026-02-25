@@ -13,21 +13,37 @@ import {
   updateUserById as _updateUserById,
   updateUserPrivilegeById as _updateUserPrivilegeById,
   createAdminCode as _createAdminCode,
+  findAndUseAdminCode as _findAndUseAdminCode,
 } from "../model/repository.js";
 
 
 export async function createUser(req, res) {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, code } = req.body;
     if (username && email && password) {
       const existingUser = await _findUserByUsernameOrEmail(username, email);
       if (existingUser) {
         return res.status(409).json({ message: "username or email already exists" });
       }
 
+      let isAdmin = false;
+      if (code) {
+        const adminCode = await _findAndUseAdminCode(code);
+        if (!adminCode) {
+          return res.status(400).json({ message: "Invalid or expired admin code" });
+        }
+        isAdmin = true;
+      }
+
       const salt = bcrypt.genSaltSync(10);
       const hashedPassword = bcrypt.hashSync(password, salt);
       const createdUser = await _createUser(username, email, hashedPassword);
+
+      if (isAdmin) {
+        await _updateUserPrivilegeById(createdUser.id, true);
+        createdUser.isAdmin = true;
+      }
+
       return res.status(201).json({
         message: `Created new user ${username} successfully`,
         data: formatUserResponse(createdUser),
