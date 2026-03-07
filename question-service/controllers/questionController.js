@@ -59,6 +59,24 @@ const getQuestionsByCategory = async (req, res) => {
     }
 }
 
+// @desc    Get questions by difficulty
+// @route   GET /api/questions/difficulty/:difficulty
+// @access  Public
+const getQuestionsByDifficulty = async (req, res) => {
+    try {
+        const questions = await Question.find({ difficulty: req.params.difficulty })
+
+        if (!questions || questions.length === 0) {
+            res.status(404).json({ message: "No questions found for this difficulty" })
+            return
+        }
+
+        res.status(200).json(questions)
+    } catch (err) {
+        res.status(400).json({ message: "Invalid difficulty" })
+    }
+}
+
 // @desc    Add a new question
 // @route   POST /api/questions
 // @access  Public
@@ -134,6 +152,7 @@ module.exports = {
     getQuestionById,
     getQuestionsByTitle,
     getQuestionsByCategory,
+    getQuestionsByDifficulty,
     addQuestion,
     updateQuestion,
     deleteQuestion,
