@@ -1,4 +1,6 @@
 import UserModel from "./user-model.js";
+import AdminCodeModel from "./admin-code-model.js";
+
 import "dotenv/config";
 import { connect } from "mongoose";
 
@@ -69,3 +71,17 @@ export async function updateUserPrivilegeById(userId, isAdmin) {
 export async function deleteUserById(userId) {
   return UserModel.findByIdAndDelete(userId);
 }
+
+export async function createAdminCode(code, createdBy) {
+  return new AdminCodeModel({ code, createdBy }).save();
+}
+
+
+export async function findAndUseAdminCode(code) {
+  return AdminCodeModel.findOneAndUpdate(
+    { code, isUsed: false },
+    { $set: { isUsed: true } },
+    { new: true }
+  );
+}
+

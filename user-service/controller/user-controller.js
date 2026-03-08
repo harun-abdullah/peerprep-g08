@@ -1,5 +1,7 @@
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import { isValidObjectId } from "mongoose";
+
 import {
   createUser as _createUser,
   deleteUserById as _deleteUserById,
@@ -10,20 +12,38 @@ import {
   findUserByUsernameOrEmail as _findUserByUsernameOrEmail,
   updateUserById as _updateUserById,
   updateUserPrivilegeById as _updateUserPrivilegeById,
+  createAdminCode as _createAdminCode,
+  findAndUseAdminCode as _findAndUseAdminCode,
 } from "../model/repository.js";
+
 
 export async function createUser(req, res) {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, code } = req.body;
     if (username && email && password) {
       const existingUser = await _findUserByUsernameOrEmail(username, email);
       if (existingUser) {
         return res.status(409).json({ message: "username or email already exists" });
       }
 
+      let isAdmin = false;
+      if (code) {
+        const adminCode = await _findAndUseAdminCode(code);
+        if (!adminCode) {
+          return res.status(400).json({ message: "Invalid or expired admin code" });
+        }
+        isAdmin = true;
+      }
+
       const salt = bcrypt.genSaltSync(10);
       const hashedPassword = bcrypt.hashSync(password, salt);
       const createdUser = await _createUser(username, email, hashedPassword);
+
+      if (isAdmin) {
+        await _updateUserPrivilegeById(createdUser.id, true);
+        createdUser.isAdmin = true;
+      }
+
       return res.status(201).json({
         message: `Created new user ${username} successfully`,
         data: formatUserResponse(createdUser),
@@ -165,3 +185,47 @@ export function formatUserResponse(user) {
     createdAt: user.createdAt,
   };
 }
+
+export async function generateAdminCode(req, res) {
+  try {
+    const adminId = req.user.id;
+    const code = crypto.randomBytes(4).toString("hex").toUpperCase(); // 8 char OTP
+
+    await _createAdminCode(code, adminId);
+
+    return res.status(201).json({
+      message: "Admin signup code generated successfully",
+      data: { code },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Unknown error when generating admin code!" });
+  }
+}
+
+export async function upgradeUserToAdmin(req, res) {
+  try {
+    const { code } = req.body;
+    const userId = req.user.id;
+
+    if (!code) {
+      return res.status(400).json({ message: "Admin code is required" });
+    }
+
+    const adminCode = await _findAndUseAdminCode(code);
+    if (!adminCode) {
+      return res.status(400).json({ message: "Invalid or expired admin code" });
+    }
+
+    const updatedUser = await _updateUserPrivilegeById(userId, true);
+    return res.status(200).json({
+      message: `User ${updatedUser.username} upgraded to admin successfully`,
+      data: formatUserResponse(updatedUser),
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Unknown error when upgrading user!" });
+  }
+}
+
+
