@@ -12,6 +12,7 @@ This is the frontend component of **PeerPrep**, built with React, TypeScript, an
 ### Installation
 
 1. Navigate to the frontend directory:
+
    ```bash
    cd frontend
    ```
