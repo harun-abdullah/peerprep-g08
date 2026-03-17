@@ -19,6 +19,15 @@ export async function getAllUsers(): Promise<User[]> {
     return data.data;
 }
 
+export async function getUserProfile(): Promise<User> {
+    const res = await fetch(`${API_URL}/auth/me`, {
+        headers: authHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to fetch profile");
+    return data.data;
+}
+
 export async function deleteUser(id: string): Promise<void> {
     const res = await fetch(`${API_URL}/users/${id}`, {
         method: "DELETE",

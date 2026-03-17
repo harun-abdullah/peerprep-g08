@@ -51,7 +51,9 @@ export default function App() {
         <Route
            path="/questions"
              element={
+              <ProtectedRoute>
                <QuestionPage />
+              </ProtectedRoute>
              }
         />
 

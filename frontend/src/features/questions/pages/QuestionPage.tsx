@@ -5,11 +5,14 @@ import PageLayout from '../../../shared/components/PageLayout';
 import './QuestionPage.css';
 import QuestionTable from '../components/QuestionTable';
 import QuestionForm from '../components/QuestionForm';
+import { attachSpring } from 'framer-motion';
+import { getUserProfile } from '../../user/services/userService';
 
 export default function QuestionPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isAdding, setIsAdding] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   const initialFormState: Question = { title: '', question: '', answer: '', difficulty: 'easy', category: '' };
   const [formData, setFormData] = useState<Question>(initialFormState);
@@ -24,7 +27,21 @@ export default function QuestionPage() {
     }
   }
 
-  useEffect(() => { fetchQuestions(); }, []);
+  const fetchUserProfile = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const userData = await getUserProfile();
+      setIsAdmin(userData.isAdmin);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+    }
+  }
+
+  useEffect(() => { 
+    fetchQuestions();
+    fetchUserProfile();
+   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -69,10 +86,10 @@ export default function QuestionPage() {
     setIsAdding(false);
   };
 
-  // Seperate into components : Question Form and Question Table
+  // Only admin can see the from and edit/delete buttons, normal users can only see the table
   return (
     <PageLayout>
-      {isAdding ? (
+      {isAdding && isAdmin ? (
         <QuestionForm
           formData={formData}
           editingId={editingId}
@@ -83,6 +100,7 @@ export default function QuestionPage() {
       ) : (
         <QuestionTable
           questions={questions}
+          isAdmin={isAdmin}
           onAddNew={() => setIsAdding(true)}
           onEdit={handleEditClick}
           onDelete={handleDelete}
