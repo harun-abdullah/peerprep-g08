@@ -56,17 +56,6 @@ export default function Home() {
               Enter Admin Upgrade OTP
             </Button>
           )}
-          <Button
-            color="danger"
-            className="w-full"
-            onPress={() => {
-              localStorage.removeItem("token");
-              queryClient.invalidateQueries({ queryKey: ["userProfile"] });
-              navigate("/login");
-            }}
-          >
-            Log Out
-          </Button>
         </div>
       </div>
     </PageLayout>

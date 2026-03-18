@@ -5,12 +5,15 @@ import PageLayout from "../../../shared/components/PageLayout";
 import { addToast, Button, Card, CardBody, Chip } from "@heroui/react";
 import { useUserProfile } from "../hooks/useUserProfile";
 import { useUpgradeToAdmin } from "../hooks/useUpgradeToAdmin";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Profile() {
   const { data: user, isLoading: isProfileLoading } = useUserProfile();
   const { mutate, isPending: isUpgradePending } = useUpgradeToAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
+
+  const queryClient = useQueryClient();
 
   const handleUpgradeSubmit = (code: string) => {
     mutate(code, {
@@ -73,10 +76,11 @@ export default function Profile() {
                 variant="flat"
                 onPress={() => {
                   localStorage.removeItem("token");
+                  queryClient.invalidateQueries({ queryKey: ["userProfile"] });
                   navigate("/login");
                 }}
               >
-                Logout
+                Log Out
               </Button>
             </div>
           </CardBody>

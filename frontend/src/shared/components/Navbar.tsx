@@ -82,18 +82,7 @@ export default function AppNavbar() {
       </NavbarContent>
 
       <NavbarContent justify="end" className="pr-6">
-        <NavbarItem className="hidden lg:flex">
-          <Link
-            href="#"
-            onClick={() => {
-              localStorage.removeItem("token");
-              queryClient.invalidateQueries({ queryKey: ["userProfile"] });
-              navigate("/login");
-            }}
-          >
-            Log Out
-          </Link>
-        </NavbarItem>
+        <NavbarItem className="hidden lg:flex"></NavbarItem>
       </NavbarContent>
     </Navbar>
   );
