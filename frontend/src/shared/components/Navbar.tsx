@@ -8,6 +8,7 @@ import {
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import PeerprepIcon from "../../assets/images/peerprep-logo.png";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLogout } from "../../features/user/hooks/useLogout";
 
 export const PeerprepLogo = () => {
   return (
@@ -82,7 +83,18 @@ export default function AppNavbar() {
       </NavbarContent>
 
       <NavbarContent justify="end" className="pr-6">
-        <NavbarItem className="hidden lg:flex"></NavbarItem>
+        <NavbarItem className="hidden lg:flex">
+          <Link
+            href="#"
+            color="danger"
+            onClick={(e) => {
+              e.preventDefault();
+              useLogout();
+            }}
+          >
+            Log Out
+          </Link>
+        </NavbarItem>
       </NavbarContent>
     </Navbar>
   );

@@ -6,14 +6,13 @@ import { addToast, Button, Card, CardBody, Chip } from "@heroui/react";
 import { useUserProfile } from "../hooks/useUserProfile";
 import { useUpgradeToAdmin } from "../hooks/useUpgradeToAdmin";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLogout } from "../hooks/useLogout";
 
 export default function Profile() {
   const { data: user, isLoading: isProfileLoading } = useUserProfile();
   const { mutate, isPending: isUpgradePending } = useUpgradeToAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
-
-  const queryClient = useQueryClient();
 
   const handleUpgradeSubmit = (code: string) => {
     mutate(code, {
@@ -74,10 +73,8 @@ export default function Profile() {
               <Button
                 color="danger"
                 variant="flat"
-                onPress={() => {
-                  localStorage.removeItem("token");
-                  queryClient.invalidateQueries({ queryKey: ["userProfile"] });
-                  navigate("/login");
+                onPress={(e) => {
+                  useLogout();
                 }}
               >
                 Log Out
