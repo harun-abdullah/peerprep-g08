@@ -1,5 +1,15 @@
+import {
+  Button,
+  Card,
+  CardBody,
+  CardFooter,
+  CardHeader,
+  Divider,
+  Snippet,
+} from "@heroui/react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import PageLayout from "../../../shared/components/PageLayout";
 
 export default function GenerateOTP() {
   const [otp, setOtp] = useState<string | null>(null);
@@ -53,43 +63,50 @@ export default function GenerateOTP() {
   };
 
   return (
-    <div className="container">
-      <div className="box">
-        <h3>Generate Admin OTP</h3>
+    <PageLayout>
+      <div className="min-h-screen flex flex-col justify-center items-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="flex flex-col items-center">
+            <h3 className="text-xl font-bold">Generate Admin OTP</h3>
+          </CardHeader>
 
-        <button
-          className="button"
-          onClick={handleGenerate}
-          style={{ backgroundColor: "#52de92" }}
-        >
-          Generate Code
-        </button>
+          <CardBody className="px-6 flex flex-col gap-4">
+            {message && !otp && (
+              <div
+                className={`text-sm text-center border ${
+                  error ? "text-danger" : "text-success"
+                }`}
+              >
+                {message}
+              </div>
+            )}
 
-        {otp && (
-          <div>
-            <p>Your Admin Code:</p>
-            <h1>{otp}</h1>
-          </div>
-        )}
+            {otp && (
+              <div className="flex flex-col items-center justify-center gap-2">
+                <p className="text-sm font-medium">Your Admin Code:</p>
+                <Snippet symbol="" color="success" size="lg" variant="flat">
+                  {otp}
+                </Snippet>
+              </div>
+            )}
 
-        {message && !otp && (
-          <p
-            style={{
-              color: error ? "red" : "green",
-            }}
-          >
-            {message}
-          </p>
-        )}
+            <Button color="warning" className="w-full" onPress={handleGenerate}>
+              {otp ? "Generate New Code" : "Generate Code"}
+            </Button>
+          </CardBody>
 
-        <button
-          className="button"
-          onClick={handleBack}
-          style={{ backgroundColor: "#c41e1e" }}
-        >
-          Back
-        </button>
+          <CardFooter className="px-6">
+            <Button
+              variant="flat"
+              color="default"
+              className="w-full"
+              onPress={handleBack}
+            >
+              Back to Home
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
-    </div>
+    </PageLayout>
   );
 }

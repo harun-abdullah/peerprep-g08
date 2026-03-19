@@ -82,7 +82,7 @@ export default function AppNavbar() {
       </NavbarContent>
 
       <NavbarContent justify="end" className="pr-6">
-        <NavbarItem className="hidden lg:flex">
+        <NavbarItem className="lg:flex">
           <Link
             href="#"
             color="danger"
