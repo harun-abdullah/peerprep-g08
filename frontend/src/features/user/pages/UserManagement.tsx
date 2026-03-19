@@ -1,4 +1,4 @@
-import { useAdmin } from "../hooks/useAdmin";
+import { useGenerateOtp } from "../hooks/useGenerateOtp.ts";
 import { useUsers } from "../hooks/useUsers";
 import { useNavigate } from "react-router-dom";
 import PageLayout from "../../../shared/components/PageLayout";
@@ -9,7 +9,7 @@ import {
 
 export default function UserManagement() {
   const { users, loading, error, removeUser, togglePrivilege } = useUsers();
-  const { loadingOtp, generateAdminOtp } = useAdmin();
+  const { loadingOtp, generateAdminOtp } = useGenerateOtp();
   const navigate = useNavigate();
 
   if (loading) return <p className="p-8 text-gray-500">Loading users...</p>;
