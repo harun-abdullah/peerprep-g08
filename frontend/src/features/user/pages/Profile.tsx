@@ -5,13 +5,17 @@ import PageLayout from "../../../shared/components/PageLayout";
 import { addToast, Button, Card, CardBody, Chip } from "@heroui/react";
 import { useUserProfile } from "../hooks/useUserProfile";
 import { useUpgradeToAdmin } from "../hooks/useUpgradeToAdmin";
-import { useQueryClient } from "@tanstack/react-query";
 import { useLogout } from "../hooks/useLogout";
+import { useDeleteUser } from "../hooks/useDeleteUser.ts";
+import { useQueryClient } from "@tanstack/react-query";
+import DeleteWarning from "../components/DeleteWarning.tsx";
 
 export default function Profile() {
   const { data: user, isLoading: isProfileLoading } = useUserProfile();
   const { mutate, isPending: isUpgradePending } = useUpgradeToAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteWarningOpen, setIsDeleteWarningOpen] = useState(false);
+  const { mutate: deleteAccount, isPending: isDeleting } = useDeleteUser();
   const navigate = useNavigate();
   const logout = useLogout();
 
@@ -38,6 +42,27 @@ export default function Profile() {
       },
     });
   };
+  const handleDeleteAccount = () => {
+    deleteAccount(user.id, {
+      onSuccess: () => {
+        addToast({
+          title: "Account Deleted",
+          description: "Your account has been permanently deleted.",
+          color: "success",
+          timeout: 3000,
+        });
+
+        logout(); // or navigate to landing page
+      },
+      onError: (err) => {
+        addToast({
+          title: "Error",
+          description: err.message,
+          color: "danger",
+        });
+      },
+    });
+  }
 
   if (isProfileLoading)
     return <p className="p-8 text-gray-500">Loading profile...</p>;
@@ -74,11 +99,17 @@ export default function Profile() {
               <Button
                 color="danger"
                 variant="flat"
-                onPress={(e) => {
+                onPress={() => {
                   logout();
                 }}
               >
                 Log Out
+              </Button>
+              <Button
+                  color="danger"
+                  onPress={() => setIsDeleteWarningOpen(true)}
+              >
+                 Delete Account
               </Button>
             </div>
           </CardBody>
@@ -90,6 +121,12 @@ export default function Profile() {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleUpgradeSubmit}
         isLoading={isUpgradePending}
+      />
+      <DeleteWarning
+        isOpen={isDeleteWarningOpen}
+        onClose={() => setIsDeleteWarningOpen(false)}
+        onConfirm={handleDeleteAccount}
+        isLoading={isDeleting}
       />
     </PageLayout>
   );

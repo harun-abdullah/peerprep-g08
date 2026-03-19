@@ -7,7 +7,7 @@ interface GenerateOtpResponse {
     };
 }
 
-export function useAdmin() {
+export function useGenerateOtp() {
     const [loadingOtp, setLoadingOtp] = useState<boolean>(false);
 
     const generateAdminOtp = async () => {
