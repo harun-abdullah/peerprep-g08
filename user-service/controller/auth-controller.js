@@ -39,3 +39,16 @@ export async function handleVerifyToken(req, res) {
     return res.status(500).json({ message: err.message });
   }
 }
+
+export async function handleGetMe(req, res) {
+  try {
+    const user = req.user;
+
+    return res.status(200).json({
+      message: "User profile fetched",
+      data: user,
+    }); 
+  } catch (err) {
+    return res.status(500).json({ message: err.message })
+  }
+}
