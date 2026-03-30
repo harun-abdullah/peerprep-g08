@@ -1,79 +1,114 @@
-// dependencies
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const redis = require('redis');
 const cors = require('cors');
-
 require('dotenv').config();
 
-// express server
+// set up http server and socket.io
 const app = express();
 app.use(cors());
 const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Adjust for production
+    methods: ["GET", "POST"]
+  }
+});
 
-// reddis client setup
 const PORT = process.env.PORT || 3002;
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
 const REDIS_PORT = process.env.REDIS_PORT || 6379;
 
+// Key : queue:language:category:difficulty | Value : list of socket ids waiting for that criteria
 const redisClient = redis.createClient({
   url: `redis://${REDIS_HOST}:${REDIS_PORT}`
 });
 
 redisClient.on('error', (err) => console.log('Redis Client Error', err));
 
+// Key : socket.id | Value : timeout object
+const timeouts = new Map(); 
+
+// Key : socket.id (unique id of current socket): Value :queueKey (Full string of the redis list)
+const socketToQueueMap = new Map(); 
+
 (async () => {
   await redisClient.connect();
   console.log('Connected to Redis');
 })();
 
-// health check
 app.get('/', (req, res) => {
   res.send('Matching Service is running');
-});
-
-// Socket.IO setup
-const io = new Server(server, {
-  cors: {
-    origin: "*", // Adjust later for production
-    methods: ["GET", "POST"]
-  }
 });
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
   socket.on('find-match', async (data) => {
-    const { userId, difficulty, category } = data;
-    const queueKey = `queue:${difficulty}:${category}`;
+    // Prevent duplicate queue entries (Double Click buttons)
+    if (socketToQueueMap.has(socket.id)) {
+        return socket.emit('error', { message: 'You are already searching for a match.' });
+    }
+    const { userId, difficulty, category, language } = data;
+    const queueKey = `queue:${language}:${category}:${difficulty}`;
 
-    console.log(`User ${userId} looking for ${difficulty} match in ${category}`);
+    console.log(`User ${userId} looking for ${language}/${difficulty} match in ${category}`);
 
-    // Simple matching logic: Check if there's a waiting user in the same queue
-    const waitingUser = await redisClient.get(queueKey);
+    const waitingSocketId = await redisClient.lPop(queueKey);
 
-    // Match found, create room and notify both users
-    if (waitingUser && waitingUser !== userId) {
-
-      await redisClient.del(queueKey);
+    // Match found
+    if (waitingSocketId && waitingSocketId !== socket.id) {
+      const roomId = `room-${waitingSocketId}-${socket.id}-${Date.now()}`;
       
-      const roomId = `room-${waitingUser}-${userId}-${Date.now()}`;
+      // Clear the timeout for the waiting user
+      const waitingTimeout = timeouts.get(waitingSocketId);
+      if (waitingTimeout) {
+        clearTimeout(waitingTimeout);
+        timeouts.delete(waitingSocketId);
+      }
+      socketToQueueMap.delete(waitingSocketId);
+
+      // Notify both users
+      io.to(socket.id).emit('match-found', { roomId, partnerId: waitingSocketId });
+      io.to(waitingSocketId).emit('match-found', { roomId, partnerId: socket.id });
       
-      io.to(socket.id).emit('match-found', { roomId, partnerId: waitingUser });
-      io.to(waitingUser).emit('match-found', { roomId, partnerId: userId });
-      
-      console.log(`Match found: ${waitingUser} and ${userId}`);
+      console.log(`Match found: ${waitingSocketId} and ${socket.id}`);
     } else {
       // No match, join queue
-      await redisClient.set(queueKey, socket.id, {
-        EX: 30 // 30 seconds timeout
-      });
+      await redisClient.rPush(queueKey, socket.id);
+      socketToQueueMap.set(socket.id, queueKey);
+
+      // Clear if user disconnects or finds a match before timeout
+      const timeoutId = setTimeout(async () => {
+        await redisClient.lRem(queueKey, 0, socket.id);
+        socket.emit('match-timeout', { message: 'No match found within 30s' });
+        timeouts.delete(socket.id);
+        socketToQueueMap.delete(socket.id);
+        console.log(`User ${socket.id} timed out from queue: ${queueKey}`);
+      }, 30000); 
+
+      timeouts.set(socket.id, timeoutId);
       console.log(`User ${userId} joined queue: ${queueKey}`);
     }
   });
 
-  socket.on('disconnect', () => {
+  // User can disconnect/close device and someone else could match with ghost socket. 
+  socket.on('disconnect', async () => {
+    // Clean up from queue if still present
+    const queueKey = socketToQueueMap.get(socket.id);
+    if (queueKey) {
+      await redisClient.lRem(queueKey, 0, socket.id);
+      console.log(`Cleaned up ghost socket ${socket.id} from ${queueKey}`);
+    }
+
+    const timeoutId = timeouts.get(socket.id);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeouts.delete(socket.id);
+    }
+    socketToQueueMap.delete(socket.id);
+    
     console.log('User disconnected:', socket.id);
   });
 });

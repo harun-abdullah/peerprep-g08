@@ -7,6 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:3001';
 const QUESTION_SERVICE_URL = process.env.QUESTION_SERVICE_URL || 'http://localhost:8080';
+const MATCHING_SERVICE_URL = process.env.MATCHING_SERVICE_URL || 'http://localhost:3002';
 
 app.use(cors());
 
@@ -25,6 +26,16 @@ app.use('/api/question-service', createProxyMiddleware({
     changeOrigin: true,
     pathRewrite: {
         '^/api/question-service': '',
+    },
+}));
+
+// Proxy for Matching Service 
+app.use('/api/matching-service', createProxyMiddleware({
+    target: MATCHING_SERVICE_URL,
+    changeOrigin: true,
+    ws: true,
+    pathRewrite: {
+        '^/api/matching-service': '',
     },
 }));
 
