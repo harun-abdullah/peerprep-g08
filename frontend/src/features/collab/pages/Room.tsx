@@ -32,7 +32,10 @@ import CollabEditor from "../components/CollabEditor";
 export default function Room() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  // handles session ending modal
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  // handles modal from displaying other party ending session
+  const [sessionEnded, setSessionEnded] = useState(false);
 
   const [language, setLanguage] = useState("javascript");
   const [roomReady, setRoomReady] = useState(false);
@@ -70,7 +73,7 @@ export default function Room() {
 
   // Autoleave when session ends
   const handleSessionEnd = () => {
-    navigate("/");
+    setSessionEnded(true);
   };
   useEffect(() => {
     socket.on("room_ended", handleSessionEnd);
@@ -168,6 +171,28 @@ export default function Room() {
                     id="confirm-end-room-btn"
                   >
                     Confirm End
+                  </Button>
+                </ModalFooter>
+              </>
+            )}
+          </ModalContent>
+        </Modal>
+
+        <Modal isOpen={sessionEnded} onOpenChange={() => {}} placement="center">
+          <ModalContent>
+            {() => (
+              <>
+                <ModalHeader>Room has been ended by other user</ModalHeader>
+                <ModalBody>
+                  <p className="text-sm text-default-600">Redirect to home.</p>
+                </ModalBody>
+                <ModalFooter>
+                  <Button
+                    color="danger"
+                    onPress={() => navigate("/")}
+                    id="go-home-btn"
+                  >
+                    Back to Home
                   </Button>
                 </ModalFooter>
               </>
