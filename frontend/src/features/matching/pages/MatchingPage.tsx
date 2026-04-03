@@ -17,7 +17,7 @@ export default function MatchingPage() {
           <p className="text-gray-600">
             Choose from the criteria below to find your perfect coding partner!
           </p>
-          //Difficulty level selections
+          {/* Difficulty level selections */}
           <RadioGroup
             orientation="horizontal"
             label="Difficulty Level"
@@ -28,7 +28,7 @@ export default function MatchingPage() {
             <Radio value="medium">Medium</Radio>
             <Radio value="hard">Hard</Radio>
           </RadioGroup>
-          //Topic selections
+          {/* Topic selections */}
           <CheckboxGroup
             orientation="horizontal"
             label="Topics"
@@ -38,7 +38,7 @@ export default function MatchingPage() {
             <Checkbox value="linked-lists">Linked Lists</Checkbox>
             <Checkbox value="trees">Trees</Checkbox>
           </CheckboxGroup>
-          //Language selections
+          {/* Language selections */}
           <CheckboxGroup
             orientation="horizontal"
             label="Languages"
@@ -48,7 +48,7 @@ export default function MatchingPage() {
             <Checkbox value="python">Python</Checkbox>
             <Checkbox value="java">Java</Checkbox>
           </CheckboxGroup>
-          //Submit button
+          {/* Submit button */}
           <Button className="mt-4">Find Matches</Button>
         </Card>
       </div>
