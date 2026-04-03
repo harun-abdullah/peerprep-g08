@@ -31,6 +31,7 @@ export default function AppNavbar() {
     { name: "Dashboard", path: "/" },
     { name: "History", path: "/history" },
     { name: "Questions", path: "/questions" },
+    { name: "Matching", path: "/matching" },
     { name: "Profile", path: "/profile" },
   ];
 
