@@ -9,17 +9,19 @@ const RELEASE_LOCK_SCRIPT = `
   return 0
 `;
 
+// Acquire a lock for a user. Returns a token if successful, or null if lock is already held.
 async function acquireLock(userId) {
   const token = crypto.randomUUID();
   const result = await redisClient.set(
     `lock:match:${userId}`,
     token,
-    // NX = checks if key exists; PX = expire after 5 seconds (Prevent deadlock if lock never get's released)
+    // NX = checks if key exists; PX = expire after 5 seconds
     { NX: true, PX: 5000 }
   );
   return result === 'OK' ? token : null;
 }
 
+// Release a lock for a user, but only if the token matches. 
 async function releaseLock(userId, token) {
   await redisClient.eval(RELEASE_LOCK_SCRIPT, {
     keys: [`lock:match:${userId}`],

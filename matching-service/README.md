@@ -4,8 +4,9 @@ It uses **WebSockets (Socket.IO)** for bi-directional communication and **Redis*
 
 ## How it works
 The matching service listens on port **3002**. It handles real-time matching requests and manages the matching lifecycle.
-- Pair users immediately when matching criteria (language, difficulty, category) are met.
-- Automatically removes users from the queue if no match is found within **30 seconds**.
+- Pair users immediately when matching criteria (userID, language[], topics[], difficulty) are met.
+- Relaxes based on difficulty after 30s, Relaxes based on topic after 60s.
+- Automatically removes users from the queue if no match is found within **120 seconds**.
 - Automatically cleans up "ghost sockets" if a user disconnects before finding a match.
 
 ## Set-Up
@@ -51,3 +52,22 @@ The service accepts connections via `ws://localhost:3002` (or through the API Ga
   - Payload: `{ roomId, partnerId }`
 - **Event (On):** `match-timeout`
   - Payload: `{ message }`
+
+## File Structure
+```
+matching-service/
+├── config/
+│   └── redis.js                  # Redis client setup
+├── controllers/
+│   └── matchController.js        # Socket event handlers (find-match, cancel-match, disconnect)
+├── services/
+│   ├── matchingService.js        # Core matching logic, queue management, socket state
+│   └── externalServices.js       # HTTP stubs for Question and Collaboration services (will replace with API calls)
+├── socket/
+│   └── socketHandler.js          # Registers socket events with Socket.IO
+├── utils/
+│   ├── queueKeys.js              # Queue key generation and criteria parsing helpers
+│   └── lock.js                   # Redis locks
+├── index.js                      # Express + Socket.IO server entry point
+├── test-matching.js              # Test script
+└── .env                          # Environment variables (see Set-Up)

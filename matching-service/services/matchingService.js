@@ -93,7 +93,7 @@ async function tryMatching(io, socket, queueKey) {
 
     // Confirm the match atomically. 
     await Promise.all([
-      redisClient.set(`user_state:${state.userId}`,     'MATCHED', { EX: 60 }),
+      redisClient.set(`user_state:${state.userId}`, 'MATCHED', { EX: 60 }),
       redisClient.set(`user_state:${candidate.userId}`, 'MATCHED', { EX: 60 }),
     ]);
 
@@ -167,14 +167,10 @@ async function cleanupSocket(socketId) {
   const state = socketState.get(socketId);
   if (!state) return;
 
-  // Cancel all relaxation phase timers and the status update interval.
   state.relaxationTimers.forEach(clearTimeout);
   clearInterval(state.statusInterval);
 
-  // Remove this socket's entry from every Redis queue it was added to.
   await cleanupQueues(socketId);
-
-  // Mark as disconnected so any in-flight tryMatching skips this user.
   await redisClient.set(`user_state:${state.userId}`, 'DISCONNECTED', { EX: 60 });
 
   socketState.delete(socketId);

@@ -1,4 +1,4 @@
-const { handleFindMatch, handleDisconnect } = require('../controllers/matchController');
+const { handleFindMatch, handleDisconnect, handleCancelMatch } = require('../controllers/matchController');
 
 const initSocketHandler = (io) => {
   io.on('connection', (socket) => {
@@ -6,6 +6,10 @@ const initSocketHandler = (io) => {
 
     socket.on('find-match', (data) => {
       handleFindMatch(io, socket, data);
+    });
+
+    socket.on('cancel-match', () => {
+      handleCancelMatch(socket);
     });
 
     socket.on('disconnect', () => {
