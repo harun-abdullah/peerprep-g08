@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 export const loginUser = async (email: string, password: string) => {
   try {
@@ -7,11 +7,12 @@ export const loginUser = async (email: string, password: string) => {
       { email, password },
     );
     return response.data;
-  } catch (error: any) {
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || "Login failed");
+  } catch (error) {
+    const axiosError = error as AxiosError<{ message: string }>;
+    if (axiosError.response?.data) {
+      throw new Error(axiosError.response.data.message || "Login failed");
     }
-    throw new Error(error.message || "An unexpected error occurred");
+    throw new Error(axiosError.message || "An unexpected error occurred");
   }
 };
 
@@ -28,10 +29,37 @@ export const registerUser = async (userData: {
     );
 
     return response.data;
-  } catch (error: any) {
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || "Registration failed");
+  } catch (error) {
+    const axiosError = error as AxiosError<{ message: string }>;
+    if (axiosError.response?.data) {
+      throw new Error(axiosError.response.data.message || "Registration failed");
     }
-    throw new Error(error.message || "An unexpected error occurred");
+    throw new Error(axiosError.message || "An unexpected error occurred");
   }
 };
+
+export const getCurrentUser = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
+
+  try {
+    const response = await axios.get(
+      `${import.meta.env.VITE_USER_API_URL}/auth/me`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return response.data;
+  } catch (error) {
+    const axiosError = error as AxiosError<{ message: string }>;
+    if (axiosError.response?.data) {
+      throw new Error(axiosError.response.data.message || "Failed to fetch user data");
+    }
+    throw new Error(axiosError.message || "An unexpected error occurred");
+  }
+};
+
