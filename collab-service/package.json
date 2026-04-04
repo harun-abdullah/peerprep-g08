@@ -22,5 +22,8 @@
     "ws": "^8.20.0",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.30"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
   }
 }
