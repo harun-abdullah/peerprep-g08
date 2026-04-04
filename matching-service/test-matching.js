@@ -13,7 +13,8 @@ const createClient = (name, userId, languages, topics, difficulty, { onMatch, on
   });
 
   socket.on('match-found', (data) => {
-    console.log(`  [${name}] match-found | partner: ${data.partnerUserId} | topic: ${data.matchedOn?.topic} | difficulty: ${data.matchedOn?.difficulty}`);
+    console.log(`  [${name}] match-found | partner: ${data.partnerUserId} | topic: ${data.matchedOn?.topic} | difficulty: ${data.matchedOn?.difficulty}
+       | questionId: ${data.questionId} | roomId: ${data.roomUrl?.roomId}`);
     if (onMatch) onMatch(data);
     socket.disconnect();
   });
@@ -104,7 +105,7 @@ async function runTests() {
     t6.emit('cancel-match');
   }, 3000);
 
-  await wait(1000);
+  await wait(5000);
 
   // ─── TEST 7: Disconnect mid-search ───────────────────────────────────────────
   console.log('\n━━━ TEST 7: Disconnect mid-search ━━━');

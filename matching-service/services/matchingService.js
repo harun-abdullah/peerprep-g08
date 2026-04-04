@@ -127,7 +127,7 @@ async function finalizeMatch(io, socket, candidate, queueKey) {
   await cleanupQueues(candidate.socketId);
 
 
-  const { topic, difficulty } = parseMatchedCriteria(queueKey, state?.criteria ?? {});
+  const { topic, difficulty } = parseMatchedCriteria(queueKey);
 
   // Future api calls to question repo and collab service.
   const { fetchQuestion, createCollaborationRoom } = require('./externalServices');

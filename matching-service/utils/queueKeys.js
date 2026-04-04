@@ -22,10 +22,11 @@ function getQueueKeys({ languages, topics, difficulty }, level) {
   return [...new Set(keys)];
 }
 
-function parseMatchedCriteria(queueKey, criteria) {
+// parse out topic and difficulty based on relaxation level
+function parseMatchedCriteria(queueKey) {
   const parts = queueKey.split(':');
-  const topic = parts[2] ?? criteria.topics[0];
-  const difficulty = parts[3] ?? criteria.difficulty;
+  const topic = parts[2] ?? null;
+  const difficulty = parts[3] ?? null;
   return { topic, difficulty };
 }
 
