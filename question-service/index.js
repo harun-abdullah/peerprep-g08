@@ -36,4 +36,8 @@ app.get('/', (req, res) => {
     res.json({ message: 'Hello World' })
 })
 
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'UP', service: 'question-service' })
+})
+
 module.exports = app

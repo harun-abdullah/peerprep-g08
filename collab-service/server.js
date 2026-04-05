@@ -40,6 +40,10 @@ app.use("/rooms", createRoomRoutes(io));
 
 socketHandler(io);
 
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "UP", service: "collab-service" });
+});
+
 server.listen(port, () => {
   console.log("Server running on port " + port);
 });
