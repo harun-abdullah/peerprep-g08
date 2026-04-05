@@ -11,6 +11,7 @@ The entire PeerPrep system is orchestrated using a single **`docker-compose.yml`
     *   `user-service`: Handles user authentication and profiles.
     *   `question-service`: Manages the bank of technical interview questions.
     *   `collab-service`: Manages real-time collaborative editing sessions and chat.
+    *   `matching-service`: Manages finding available peers and pairing them together.
 *   **Internal Infrastructure**:
     *   `api-gateway`: Unified entry point that proxies requests to back-end services.
 *   **Front-end Application**:
@@ -60,10 +61,14 @@ graph TD
     subgraph "Docker Internal Network (peerprep-network)"
     Gateway -->|http://user-service:3001| UserSvc[peerprep-user-service]
     Gateway -->|http://question-service:8080| QuestionSvc[peerprep-question-service]
+    Gateway -->|http://collab-service:3219| CollabSvc[peerprep-collab-service]
+    Gateway -->|http://matching-service:3002| MatchingSvc[peerprep-matching-service]
+    
     UserSvc -->|mongodb://mongodb:27017| MongoDB[(peerprep-mongodb)]
     QuestionSvc -->|mongodb://mongodb:27017| MongoDB
-    CollabSvc[peerprep-collab-service] -->|redis://redis:6379| Redis[(peerprep-redis)]
     CollabSvc -->|mongodb://mongodb:27017| MongoDB
+    CollabSvc -->|redis://redis:6379| Redis[(peerprep-redis)]
+    MatchingSvc -->|redis://redis:6379| Redis
     end
 ```
 
