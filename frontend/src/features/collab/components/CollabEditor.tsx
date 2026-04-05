@@ -69,7 +69,7 @@ export default function CollabEditor({
     editorRef.current = editor;
     const yText = ydoc.getText("content");
     const model = editor.getModel();
-    const binding = new MonacoBinding(
+    new MonacoBinding(
       yText,
       model!,
       new Set([editor]),

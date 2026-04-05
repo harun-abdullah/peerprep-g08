@@ -1,4 +1,4 @@
-import { base, text } from 'framer-motion/client';
+
 import { type Question } from '../types/question.types';
 import {
   Table, TableHeader, TableColumn, TableBody, TableRow, TableCell,
@@ -8,7 +8,6 @@ import {
 interface QuestionTableProps {
   questions: Question[];
   isAdmin: boolean;
-  onAddNew: () => void;
   onEdit: (question: Question) => void;
   onDelete: (id: string) => void;
 }
@@ -70,7 +69,7 @@ const renderCell = (question: Question, columnKey: string, onEdit: (question: Qu
   }
 }
 
-export default function QuestionTable({ questions, isAdmin, onAddNew, onEdit, onDelete }: QuestionTableProps) {
+export default function QuestionTable({ questions, isAdmin, onEdit, onDelete }: QuestionTableProps) {
 
   // Only admin should see the actions column, so we filter it out for non-admin users
   const headerColumns = isAdmin ? allColumns : allColumns.filter(col => col.uid !== "actions");

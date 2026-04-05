@@ -11,6 +11,12 @@ const QUESTION_SERVICE_URL = process.env.QUESTION_SERVICE_URL || 'http://localho
 
 app.use(cors());
 
+// Debugging: Log all incoming requests
+app.use((req, res, next) => {
+    console.log(`[API-GATEWAY] ${req.method} ${req.url}`);
+    next();
+});
+
 // Proxy for User Service
 app.use('/api/user-service', createProxyMiddleware({
     target: USER_SERVICE_URL,

@@ -7,7 +7,7 @@ import { useUserProfile } from "../hooks/useUserProfile";
 import { useUpgradeToAdmin } from "../hooks/useUpgradeToAdmin";
 import { useLogout } from "../hooks/useLogout";
 import { useDeleteUser } from "../hooks/useDeleteUser.ts";
-import { useQueryClient } from "@tanstack/react-query";
+
 import DeleteWarning from "../components/DeleteWarning.tsx";
 
 export default function Profile() {

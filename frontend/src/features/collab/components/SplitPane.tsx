@@ -8,7 +8,6 @@ interface PanelProps {
   widthClass: string;
   isCollapsed: boolean;
   collapseLabel: string;
-  expandLabel: string;
   onToggle: () => void;
   side?: "left" | "right";
   "data-panel"?: string;
@@ -19,7 +18,6 @@ function Panel({
   widthClass,
   isCollapsed,
   collapseLabel,
-  expandLabel,
   onToggle,
   side = "left",
   "data-panel": dataPanel,
@@ -117,7 +115,6 @@ export default function SplitPaneLayout({
           widthClass="w-[28%] min-w-[280px] max-w-[520px]"
           isCollapsed={questionCollapsed}
           collapseLabel="Collapse question"
-          expandLabel="Show question"
           onToggle={toggleQuestion}
           side="left"
           data-panel="question"
@@ -145,7 +142,6 @@ export default function SplitPaneLayout({
           widthClass="w-[26%] min-w-[260px] max-w-[440px]"
           isCollapsed={chatCollapsed}
           collapseLabel="Collapse chat"
-          expandLabel="Show chat"
           onToggle={toggleChat}
           side="right"
           data-panel="chat"

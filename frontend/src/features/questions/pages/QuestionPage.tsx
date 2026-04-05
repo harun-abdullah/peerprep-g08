@@ -129,7 +129,6 @@ export default function QuestionPage() {
               <QuestionTable
                 questions={questions}
                 isAdmin={isAdmin}
-                onAddNew={() => setIsAdding(true)}
                 onEdit={handleEditClick}
                 onDelete={handleDelete}
               />

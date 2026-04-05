@@ -4,7 +4,6 @@ import {
   CardBody,
   CardFooter,
   CardHeader,
-  Divider,
   Snippet,
 } from "@heroui/react";
 import { useState } from "react";
