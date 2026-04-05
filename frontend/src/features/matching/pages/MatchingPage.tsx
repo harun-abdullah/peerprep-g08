@@ -170,7 +170,7 @@ export default function MatchingPage() {
               className="mt-6 w-full"
               color="primary"
               size="lg"
-              onClick={handleFindMatch}
+              onPress={handleFindMatch}
             >
               Find Match
             </Button>
@@ -183,7 +183,7 @@ export default function MatchingPage() {
               <Button
                 className="mt-4 w-full"
                 variant="bordered"
-                onClick={handleCancel}
+                onPress={handleCancel}
               >
                 Cancel Search
               </Button>
