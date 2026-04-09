@@ -38,7 +38,7 @@ export async function sendOtp(req, res) {
     // Generate a cryptographically random 6-digit OTP
     const otp = String(crypto.randomInt(100000, 999999));
 
-    await _createOtp(email, otp);
+    await _createOtp(email, otp, "email_verification");
     await sendOtpEmail(email, otp);
 
     return res.status(200).json({ message: "OTP sent to your email address. It expires in 10 minutes." });
@@ -72,7 +72,7 @@ export async function verifyOtp(req, res) {
       return res.status(400).json({ message: "Email is already verified." });
     }
 
-    const storedOtp = await _findLatestOtpByEmail(email);
+    const storedOtp = await _findLatestOtpByEmail(email, "email_verification");
     if (!storedOtp) {
       return res.status(400).json({ message: "No OTP found for this email. Please request a new one." });
     }
@@ -83,7 +83,7 @@ export async function verifyOtp(req, res) {
 
     // Mark email as verified and clean up OTP records
     await _verifyEmailById(user.id);
-    await _deleteOtpsByEmail(email);
+    await _deleteOtpsByEmail(email, "email_verification");
 
     return res.status(200).json({ message: "Email verified successfully. You may now log in." });
   } catch (err) {

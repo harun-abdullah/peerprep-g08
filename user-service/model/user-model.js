@@ -31,6 +31,11 @@ const UserModelSchema = new Schema({
     required: true,
     default: false,
   },
+  // F3.1.2 – Profile picture stored as a base64 data URI (jpg/png, max 2 MB)
+  profilePicture: {
+    type: String,
+    default: null,
+  },
 });
 
 export default mongoose.model("UserModel", UserModelSchema);

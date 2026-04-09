@@ -14,9 +14,11 @@ import {
   updateUserPrivilegeById as _updateUserPrivilegeById,
   createAdminCode as _createAdminCode,
   findAndUseAdminCode as _findAndUseAdminCode,
+  updateUserProfilePicture as _updateUserProfilePicture,
 } from "../model/repository.js";
 
-import { isValidEmail, validatePassword } from "../utils/validators.js";
+import { isValidEmail, validatePassword, validateUsername } from "../utils/validators.js";
+import { bufferToDataUri } from "../middleware/profile-picture-upload.js";
 
 
 export async function createUser(req, res) {
@@ -26,6 +28,12 @@ export async function createUser(req, res) {
       // F1.1.1 – Validate email format
       if (!isValidEmail(email)) {
         return res.status(400).json({ message: "Invalid email format." });
+      }
+
+      // F3.2.1 – Validate username format
+      const unValidation = validateUsername(username);
+      if (!unValidation.valid) {
+        return res.status(400).json({ message: unValidation.message });
       }
 
       // F1.2 – Validate password strength
@@ -117,6 +125,14 @@ export async function updateUser(req, res) {
       // F1.1.1 – Validate updated email format
       if (email && !isValidEmail(email)) {
         return res.status(400).json({ message: "Invalid email format." });
+      }
+
+      // F3.2.1 – Validate updated username format
+      if (username) {
+        const unValidation = validateUsername(username);
+        if (!unValidation.valid) {
+          return res.status(400).json({ message: unValidation.message });
+        }
       }
 
       // F1.2 – Validate updated password strength
@@ -211,8 +227,45 @@ export function formatUserResponse(user) {
     email: user.email,
     isAdmin: user.isAdmin,
     isEmailVerified: user.isEmailVerified,
+    profilePicture: user.profilePicture ?? null,
     createdAt: user.createdAt,
   };
+}
+
+/**
+ * PATCH /users/:id/profile-picture
+ * Multipart form-data field: profilePicture (image/jpeg or image/png, max 2 MB)
+ *
+ * Stores the uploaded image as a base64 data URI in MongoDB.
+ */
+export async function updateProfilePicture(req, res) {
+  try {
+    const userId = req.params.id;
+
+    if (!isValidObjectId(userId)) {
+      return res.status(404).json({ message: `User ${userId} not found` });
+    }
+
+    const user = await _findUserById(userId);
+    if (!user) {
+      return res.status(404).json({ message: `User ${userId} not found` });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No profile picture file provided." });
+    }
+
+    const dataUri = bufferToDataUri(req.file);
+    const updatedUser = await _updateUserProfilePicture(userId, dataUri);
+
+    return res.status(200).json({
+      message: `Profile picture updated for user ${userId}`,
+      data: formatUserResponse(updatedUser),
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Unknown error when updating profile picture!" });
+  }
 }
 
 export async function generateAdminCode(req, res) {
