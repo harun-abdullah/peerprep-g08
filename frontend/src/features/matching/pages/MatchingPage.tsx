@@ -16,7 +16,7 @@ import { useUserProfile } from "../../user/hooks/useUserProfile";
 
 const SOCKET_URL =
   import.meta.env.VITE_MATCHING_API_GATEWAY_URL ||
-  "http://localhost:3000/api/matching-service";
+  "http://localhost:3000";
 
 export default function MatchingPage() {
   const navigate = useNavigate();
@@ -35,6 +35,7 @@ export default function MatchingPage() {
   // Initialize socket connection
   useEffect(() => {
     const newSocket = io(SOCKET_URL, {
+      path: "/api/matching-service/socket.io",
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,

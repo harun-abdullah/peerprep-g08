@@ -78,19 +78,19 @@ export async function setupYjsHandler(server, io) {
     const roomId = req.url.replace("/yjs/", "");
 
     if (!rooms.has(roomId)) {
-      // get from Redis if available
+      // Fixed race condition: first create and register the Y.Doc, then load state asynchronously
       const ydoc = new Y.Doc();
+      rooms.set(roomId, { ydoc, clients: new Set(), lastActivity: Date.now() });
+
       const saved = await redisClient.get(`yjs:${roomId}`);
       if (saved) {
         Y.applyUpdate(ydoc, Buffer.from(saved, "base64"));
-      } else if (!saved) {
-        // not in Redis, fall back to MongoDB content
+      } else {
         const dbRoom = await CollabRoom.findOne({ roomId });
         if (dbRoom?.content) {
           ydoc.getText("content").insert(0, dbRoom.content);
         }
       }
-      rooms.set(roomId, { ydoc, clients: new Set(), lastActivity: Date.now() });
     }
 
     const room = rooms.get(roomId);
