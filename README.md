@@ -4,7 +4,40 @@
 
 ## Group: G08
 
-## How to run Peerprep:
+## How to run PeerPrep
 
-1. For each microservice, cd into its directory and run npm install (including frontend and api-gateway)
-2. In the main directory, run 'npm run dev' to start the whole app
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+- A MongoDB Atlas cluster (for user-service and question-service)
+
+---
+
+### 1. Set up environment files
+
+Copy every service's `.env.example` to `.env` and fill in the required values:
+See each service's `.env.example` for the required variables.
+
+---
+
+### 2. Start all services
+
+```bash
+docker compose up --build
+```
+
+
+---
+
+### Useful commands
+
+```bash
+# Check all containers are running
+docker compose ps
+
+# View logs for a specific service
+docker compose logs -f collab-service
+docker compose logs -f matching-service
+
+# Stop all containers
+docker compose down
+```
