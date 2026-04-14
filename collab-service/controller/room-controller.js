@@ -35,6 +35,8 @@ export function createRoomController(io) {
       });
     } else if (error === "Room is full") {
       return res.status(403).json({ error: "Room full" });
+    } else if (error === "User already in room") {
+      return res.status(409).json({ error: "User already in room" });
     } else {
       return res.status(404).json({ error: "Room not found" });
     }
@@ -71,4 +73,3 @@ export function createRoomController(io) {
 
   return { createRoom, joinRoom, getRoom, endRoom };
 }
-

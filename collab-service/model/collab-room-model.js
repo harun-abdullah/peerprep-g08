@@ -34,7 +34,7 @@ export default class CollabRoomModel {
     const room = await CollabRoom.findOne({ roomId });
     if (!room) return { error: "Room not found", data: null };
     if (room.users.find((u) => u.id === user.id))
-      return { error: null, data: room };
+      return { error: "User already in room", data: null };
     if (room.users.length >= 2) return { error: "Room is full", data: null };
 
     const updated = await CollabRoom.findOneAndUpdate(
