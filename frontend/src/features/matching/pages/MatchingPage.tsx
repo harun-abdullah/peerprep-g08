@@ -21,6 +21,7 @@ const SOCKET_URL =
 
 export default function MatchingPage() {
   const navigate = useNavigate();
+  const { data: user } = useUserProfile();
   // State for form inputs
   const [difficulty, setDifficulty] = useState("easy");
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
@@ -117,6 +118,7 @@ export default function MatchingPage() {
       return;
     }
     socket.emit("find-match", {
+      userId: user?.id,
       languages: selectedLanguages,
       difficulty,
       topics: selectedTopics,
