@@ -5,6 +5,7 @@ import { isValidObjectId } from "mongoose";
 import {
   createUser as _createUser,
   deleteUserById as _deleteUserById,
+  validateAdminOperation as _validateAdminOperation,
   findAllUsers as _findAllUsers,
   findUserByEmail as _findUserByEmail,
   findUserById as _findUserById,
@@ -16,6 +17,7 @@ import {
   findAndUseAdminCode as _findAndUseAdminCode,
   updateUserProfilePicture as _updateUserProfilePicture,
 } from "../model/repository.js";
+import { queueAdminOperation } from "../utils/admin-operation-queue.js";
 import jwt from "jsonwebtoken";
 
 import { isValidEmail, validatePassword, validateUsername } from "../utils/validators.js";
@@ -222,11 +224,38 @@ export async function updateUserPrivilege(req, res) {
           });
       }
 
-      const updatedUser = await _updateUserPrivilegeById(userId, isAdmin === true);
-      return res.status(200).json({
-        message: `Updated privilege for user ${userId}`,
-        data: formatUserResponse(updatedUser),
-      });
+      // Demotion operations (admin -> non-admin) are queued to prevent race conditions
+      // Promotion operations don't need queuing
+      if (user.isAdmin && isAdmin === false) {
+        // Attempting to demote an admin - queue it to prevent race conditions
+        try {
+          let updatedUser;
+          await queueAdminOperation(async () => {
+            // Validate that demotion won't leave system with zero admins
+            await _validateAdminOperation(userId, "demote");
+            // Now update privilege
+            updatedUser = await _updateUserPrivilegeById(userId, false);
+          });
+          return res.status(200).json({
+            message: `Updated privilege for user ${userId}`,
+            data: formatUserResponse(updatedUser),
+          });
+        } catch (err) {
+          if (err.message.includes("Cannot demote the last admin")) {
+            return res.status(403).json({
+              message: "Cannot demote the last admin. Promote another user to admin before demoting this one.",
+            });
+          }
+          throw err;
+        }
+      } else {
+        // Promotion or no-op (already has same privilege)
+        const updatedUser = await _updateUserPrivilegeById(userId, isAdmin === true);
+        return res.status(200).json({
+          message: `Updated privilege for user ${userId}`,
+          data: formatUserResponse(updatedUser),
+        });
+      }
     } else {
       return res.status(400).json({ message: "isAdmin is missing!" });
     }
@@ -239,15 +268,47 @@ export async function updateUserPrivilege(req, res) {
 export async function deleteUser(req, res) {
   try {
     const userId = req.params.id;
+    const requesterId = req.user.id;
+
     if (!isValidObjectId(userId)) {
       return res.status(404).json({ message: `User ${userId} not found` });
     }
+
     const user = await _findUserById(userId);
     if (!user) {
       return res.status(404).json({ message: `User ${userId} not found` });
     }
 
-    await _deleteUserById(userId);
+    // Prevent admins from deleting themselves
+    if (user.isAdmin && userId === requesterId) {
+      return res.status(403).json({
+        message: "Cannot delete yourself as an admin. Ask another admin to remove your privileges first.",
+      });
+    }
+
+    // Admin deletions are queued to prevent race conditions
+    // Non-admin deletions are direct (no need for queue)
+    if (user.isAdmin) {
+      try {
+        await queueAdminOperation(async () => {
+          // Validate that deletion won't leave system with zero admins
+          await _validateAdminOperation(userId, "delete");
+          // Now delete
+          await _deleteUserById(userId);
+        });
+      } catch (err) {
+        if (err.message.includes("Cannot delete the last admin")) {
+          return res.status(403).json({
+            message: "Cannot delete the last admin. Promote another user to admin before removing this one.",
+          });
+        }
+        throw err;
+      }
+    } else {
+      // Non-admin deletion is direct
+      await _deleteUserById(userId);
+    }
+
     return res.status(200).json({ message: `Deleted user ${userId} successfully` });
   } catch (err) {
     console.error(err);

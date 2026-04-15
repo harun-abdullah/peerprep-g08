@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input } from "@heroui/react";
+import { getErrorMessage } from "../../../utils/error-handler";
 
 interface EmailOtpModalProps {
   isOpen: boolean;
@@ -34,8 +35,8 @@ export default function EmailOtpModal({
     try {
       await onSubmit(otp.trim());
       setOtp(""); // Clear on success
-    } catch (err: any) {
-      setError(err.message || "Failed to verify OTP.");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Failed to verify OTP.");
     }
   };
 
@@ -46,8 +47,8 @@ export default function EmailOtpModal({
     try {
       await onResend();
       // Maybe show a success indicator?
-    } catch (err: any) {
-      setError(err.message || "Failed to resend OTP.");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Failed to resend OTP.");
     } finally {
       setIsResending(false);
     }

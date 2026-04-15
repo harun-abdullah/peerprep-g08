@@ -36,6 +36,27 @@ const OtpModelSchema = new Schema({
     password: { type: String },
     isAdmin: { type: Boolean, default: false },
   },
+  /**
+   * Track failed verification attempts to implement rate limiting.
+   * - 1st failure: delete OTP, require new send
+   * - 2nd failure: lock email for 15 minutes
+   */
+  attemptCount: {
+    type: Number,
+    default: 0,
+  },
+  lastAttemptTime: {
+    type: Date,
+    default: null,
+  },
+  isLocked: {
+    type: Boolean,
+    default: false,
+  },
+  lockedUntil: {
+    type: Date,
+    default: null,
+  },
   // TTL index: MongoDB will automatically delete documents after 600 seconds (10 min)
   createdAt: {
     type: Date,

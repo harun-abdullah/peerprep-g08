@@ -73,6 +73,28 @@ export async function deleteUserById(userId) {
   return UserModel.findByIdAndDelete(userId);
 }
 
+/**
+ * Validates that deleting or demoting an admin won't leave the system with zero admins.
+ * This function is always called within the admin operation queue to prevent race conditions.
+ * @param {string} userId
+ * @param {'delete'|'demote'} operation - Type of operation being performed
+ * @throws {Error} if operation would leave system with zero admins
+ */
+export async function validateAdminOperation(userId, operation = "delete") {
+  const user = await UserModel.findById(userId);
+  if (!user || !user.isAdmin) {
+    return user;
+  }
+
+  const adminCount = await UserModel.countDocuments({ isAdmin: true });
+  if (adminCount === 1) {
+    const actionText = operation === "delete" ? "delete" : "demote";
+    throw new Error(`Cannot ${actionText} the last admin`);
+  }
+
+  return user;
+}
+
 export async function createAdminCode(code, createdBy) {
   return new AdminCodeModel({ code, createdBy }).save();
 }
@@ -122,6 +144,72 @@ export async function deleteOtpsByEmail(email, purpose) {
 }
 
 /**
+ * Increments the failed attempt count for an OTP and potentially locks it.
+ * Returns the updated OTP document.
+ * @param {string} email
+ * @param {'email_verification'|'password_reset'} purpose
+ * @returns {object} Updated OTP document with incremented attemptCount
+ */
+export async function incrementOtpAttempt(email, purpose = "email_verification") {
+  const now = new Date();
+  const lockoutDuration = 15 * 60 * 1000; // 15 minutes in milliseconds
+
+  const otp = await OtpModel.findOneAndUpdate(
+    { email, purpose },
+    {
+      $inc: { attemptCount: 1 },
+      $set: { lastAttemptTime: now },
+    },
+    { new: true }
+  );
+
+  // If this is the 2nd failed attempt, lock the email
+  if (otp && otp.attemptCount >= 2) {
+    await OtpModel.findOneAndUpdate(
+      { email, purpose },
+      {
+        $set: {
+          isLocked: true,
+          lockedUntil: new Date(now.getTime() + lockoutDuration),
+        },
+      }
+    );
+  }
+
+  return otp;
+}
+
+/**
+ * Checks if an email is currently locked for OTP verification.
+ * Unlocks if lockout period has expired.
+ * @param {string} email
+ * @param {'email_verification'|'password_reset'} purpose
+ * @returns {boolean} true if email is locked, false otherwise
+ */
+export async function isOtpLocked(email, purpose = "email_verification") {
+  const otp = await OtpModel.findOne({ email, purpose });
+
+  if (!otp || !otp.isLocked) {
+    return false;
+  }
+
+  const now = new Date();
+
+  // If lockout period has expired, unlock
+  if (otp.lockedUntil && otp.lockedUntil <= now) {
+    await OtpModel.findOneAndUpdate(
+      { email, purpose },
+      {
+        $set: { isLocked: false, lockedUntil: null, attemptCount: 0 },
+      }
+    );
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Marks the user's email as verified.
  */
 export async function verifyEmailById(userId) {
@@ -164,4 +252,16 @@ export async function resetPasswordById(userId, hashedPassword) {
     { $set: { password: hashedPassword } },
     { new: true }
   );
+}
+
+// ---------------------------------------------------------------------------
+// Admin management (F2.2.3 – prevent last admin deletion)
+// ---------------------------------------------------------------------------
+
+/**
+ * Counts the total number of active admins in the system.
+ * @returns {number} Count of users with isAdmin=true
+ */
+export async function countAdmins() {
+  return UserModel.countDocuments({ isAdmin: true });
 }

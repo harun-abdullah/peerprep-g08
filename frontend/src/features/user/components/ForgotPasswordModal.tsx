@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input } from "@heroui/react";
 import { sendPasswordResetOtp, resetPassword } from "../api/auth";
+import { getErrorMessage } from "../../../utils/error-handler";
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
@@ -41,8 +42,8 @@ export default function ForgotPasswordModal({ isOpen, onClose, onSuccess }: Forg
     try {
       await sendPasswordResetOtp(email.trim());
       setStep("reset");
-    } catch (err: any) {
-      setError(err.message || "Failed to send reset code.");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Failed to send reset code.");
     } finally {
       setIsLoading(false);
     }
@@ -53,8 +54,8 @@ export default function ForgotPasswordModal({ isOpen, onClose, onSuccess }: Forg
     setError(null);
     try {
       await sendPasswordResetOtp(email.trim());
-    } catch (err: any) {
-      setError(err.message || "Failed to resend reset code.");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Failed to resend reset code.");
     } finally {
       setIsResending(false);
     }
@@ -80,8 +81,8 @@ export default function ForgotPasswordModal({ isOpen, onClose, onSuccess }: Forg
       await resetPassword(email.trim(), otp.trim(), newPassword);
       handleClose();
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Failed to reset password.");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Failed to reset password.");
     } finally {
       setIsLoading(false);
     }

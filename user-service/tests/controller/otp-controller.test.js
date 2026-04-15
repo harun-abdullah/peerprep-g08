@@ -7,6 +7,8 @@ import {
   deleteOtpsByEmail,
   verifyEmailById,
   updateUserPrivilegeById,
+  incrementOtpAttempt,
+  isOtpLocked,
 } from "../../model/repository.js";
 import { sendOtpEmail } from "../../utils/mailer.js";
 
@@ -125,13 +127,19 @@ describe("OTP Controller", () => {
       });
     });
 
-    test("400 – incorrect OTP", async () => {
-      findLatestOtpByEmail.mockResolvedValue({ otp: "123456" });
+    test("400 – incorrect OTP (first attempt) requires new send", async () => {
+      isOtpLocked.mockResolvedValue(false);
+      findLatestOtpByEmail.mockResolvedValue({ otp: "123456", attemptCount: 0 });
+      incrementOtpAttempt.mockResolvedValue({ attemptCount: 1 }); // First failure
+      deleteOtpsByEmail.mockResolvedValue({});
+
       const req = { body: { email: "unverified@t.com", otp: "000000" } };
       const res = mockRes();
       await verifyOtp(req, res);
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ message: "Invalid OTP." });
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Invalid OTP. Please request a new code and try again.",
+      });
     });
 
     test("201 – deferred registration: creates user and verifies on correct OTP", async () => {
@@ -213,6 +221,56 @@ describe("OTP Controller", () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({ message: "Email is already verified." });
+    });
+
+    test("429 – email is locked after too many failed attempts", async () => {
+      isOtpLocked.mockResolvedValue(true);
+
+      const req = { body: { email: "locked@t.com", otp: "123456" } };
+      const res = mockRes();
+
+      await verifyOtp(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(429);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Too many failed attempts. Please try again in 15 minutes.",
+      });
+    });
+
+    test("400 – first wrong OTP deletes current OTP and requires new send", async () => {
+      isOtpLocked.mockResolvedValue(false);
+      findLatestOtpByEmail.mockResolvedValue({ otp: "123456", attemptCount: 0 });
+      incrementOtpAttempt.mockResolvedValue({ attemptCount: 1 }); // First failure
+      deleteOtpsByEmail.mockResolvedValue({});
+
+      const req = { body: { email: "a@t.com", otp: "000000" } };
+      const res = mockRes();
+
+      await verifyOtp(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Invalid OTP. Please request a new code and try again.",
+      });
+      expect(deleteOtpsByEmail).toHaveBeenCalledWith("a@t.com", "email_verification");
+    });
+
+    test("429 – second wrong OTP locks email for 15 minutes", async () => {
+      isOtpLocked.mockResolvedValue(false);
+      findLatestOtpByEmail.mockResolvedValue({ otp: "123456", attemptCount: 1 });
+      incrementOtpAttempt.mockResolvedValue({ attemptCount: 2 }); // Second failure → lock
+      deleteOtpsByEmail.mockResolvedValue({});
+
+      const req = { body: { email: "b@t.com", otp: "000000" } };
+      const res = mockRes();
+
+      await verifyOtp(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(429);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Too many failed attempts. Email locked for 15 minutes. Please try again later.",
+      });
+      expect(deleteOtpsByEmail).toHaveBeenCalledWith("b@t.com", "email_verification");
     });
   });
 });

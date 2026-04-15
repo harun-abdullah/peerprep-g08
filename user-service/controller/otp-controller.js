@@ -8,6 +8,8 @@ import {
   deleteOtpsByEmail as _deleteOtpsByEmail,
   verifyEmailById as _verifyEmailById,
   updateUserPrivilegeById as _updateUserPrivilegeById,
+  incrementOtpAttempt as _incrementOtpAttempt,
+  isOtpLocked as _isOtpLocked,
 } from "../model/repository.js";
 
 import { sendOtpEmail } from "../utils/mailer.js";
@@ -72,13 +74,37 @@ export async function verifyOtp(req, res) {
       return res.status(400).json({ message: "Email and OTP are required." });
     }
 
+    // Check if email is locked due to too many failed attempts
+    const isLocked = await _isOtpLocked(email, "email_verification");
+    if (isLocked) {
+      return res.status(429).json({
+        message: "Too many failed attempts. Please try again in 15 minutes.",
+      });
+    }
+
     const storedOtp = await _findLatestOtpByEmail(email, "email_verification");
     if (!storedOtp) {
       return res.status(400).json({ message: "No OTP found for this email. Please request a new one." });
     }
 
     if (storedOtp.otp !== String(otp)) {
-      return res.status(400).json({ message: "Invalid OTP." });
+      // Increment failed attempt counter
+      const updatedOtp = await _incrementOtpAttempt(email, "email_verification");
+
+      // Delete the current OTP so user must request a new one
+      await _deleteOtpsByEmail(email, "email_verification");
+
+      // After 2 failures, email is locked
+      if (updatedOtp.attemptCount >= 2) {
+        return res.status(429).json({
+          message: "Too many failed attempts. Email locked for 15 minutes. Please try again later.",
+        });
+      }
+
+      // After 1st failure, ask for new OTP
+      return res.status(400).json({
+        message: "Invalid OTP. Please request a new code and try again.",
+      });
     }
 
     // Handle deferred user creation if userData exists in the OTP record
