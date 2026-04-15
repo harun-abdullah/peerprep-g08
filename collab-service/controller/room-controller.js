@@ -65,6 +65,11 @@ export function createRoomController(io) {
   const endRoom = async (req, res) => {
     const { roomId } = req.params;
 
+    const room = await CollabRoomModel.findById(roomId);
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+
     io.to(roomId).emit("room_ended");
 
     await finalizeRoom(roomId);

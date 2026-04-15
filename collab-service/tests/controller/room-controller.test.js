@@ -54,7 +54,7 @@ describe("createRoom", () => {
     await createRoom(req, res);
 
     expect(uuidv4).toHaveBeenCalledTimes(1);
-    expect(CollabRoomModel.create).toHaveBeenCalledWith("test-uuid", "q1");
+    expect(CollabRoomModel.create).toHaveBeenCalledWith("test-uuid", "q1", []);
     expect(res.json).toHaveBeenCalledWith({
       roomId: "test-uuid",
       questionId: "q1",
@@ -82,7 +82,7 @@ describe("createRoom", () => {
     await createRoom(req, res);
 
     expect(CollabRoomModel.create).toHaveBeenCalledWith("test-uuid", "q1", [
-      { allowedUsers: [], id: "u1", username: "alice" },
+      { id: "u1", username: "alice" },
     ]);
   });
 
@@ -261,7 +261,21 @@ describe("getRoom", () => {
 // endRoom
 /////////////////////////////////////////////////////
 describe("endRoom", () => {
+  test("returns 404 when room does not exist", async () => {
+    CollabRoomModel.findById.mockResolvedValue(null);
+
+    const { endRoom } = buildControllers();
+    const res = mockRes();
+    await endRoom({ params: { roomId: "nonexistent" } }, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ error: "Room not found" });
+    expect(finalizeRoom).not.toHaveBeenCalled();
+    expect(CollabRoomModel.endRoom).not.toHaveBeenCalled();
+  });
+
   test("emits room_ended via io, calls finalizeRoom and endRoom, returns 200", async () => {
+    CollabRoomModel.findById.mockResolvedValue({ roomId: "r1" });
     finalizeRoom.mockResolvedValue(undefined);
     CollabRoomModel.endRoom.mockResolvedValue({ roomId: "r1" });
 
@@ -275,6 +289,7 @@ describe("endRoom", () => {
   });
 
   test("emits room_ended synchronously before awaiting finalizeRoom", async () => {
+    CollabRoomModel.findById.mockResolvedValue({ roomId: "r1" });
     const callOrder = [];
     const mockEmit = jest.fn(() => callOrder.push("emit"));
     const mockIo = { to: jest.fn(() => ({ emit: mockEmit })) };
@@ -291,6 +306,7 @@ describe("endRoom", () => {
   });
 
   test("propagates error if finalizeRoom rejects (no try/catch)", async () => {
+    CollabRoomModel.findById.mockResolvedValue({ roomId: "r1" });
     finalizeRoom.mockRejectedValue(new Error("Redis down"));
 
     const { endRoom } = buildControllers();
@@ -300,6 +316,7 @@ describe("endRoom", () => {
   });
 
   test("propagates error if CollabRoomModel.endRoom rejects", async () => {
+    CollabRoomModel.findById.mockResolvedValue({ roomId: "r1" });
     finalizeRoom.mockResolvedValue(undefined);
     CollabRoomModel.endRoom.mockRejectedValue(new Error("DB down"));
 

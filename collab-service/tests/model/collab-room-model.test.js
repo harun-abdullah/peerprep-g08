@@ -31,6 +31,7 @@ describe("CollabRoomModel.create", () => {
     expect(mockCollabRoom.create).toHaveBeenCalledWith({
       roomId: "r1",
       questionId: "q1",
+      allowedUsers: [],
     });
     expect(result).toEqual(fakeRoom);
   });

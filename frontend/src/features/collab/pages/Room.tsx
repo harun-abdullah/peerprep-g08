@@ -105,9 +105,13 @@ export default function Room() {
         setRoomReady(true);
       })
       .catch((error) => {
-        if (error.response?.status === 403) {
+        const status = error.response?.status;
+        const errorBody = error.response?.data?.error;
+        if (status === 403 && errorBody === "User not allowed") {
+          alert("You are not authorised to join this room.");
+        } else if (status === 403) {
           alert("Room is full!");
-        } else if (error.response?.status === 410) {
+        } else if (status === 410) {
           alert("Room has already ended.");
         } else {
           alert("Room does not exist!");
