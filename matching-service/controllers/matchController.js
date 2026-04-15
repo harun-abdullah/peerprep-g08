@@ -1,6 +1,6 @@
 const redisClient = require('../config/redis');
 const { getQueueKeys } = require('../utils/queueKeys');
-const { socketState, findQueues, cleanupSocket } = require('../services/matchingService');
+const { socketState, userSocketMap, findQueues, cleanupSocket } = require('../services/matchingService');
 
 const handleFindMatch = async (io, socket, data) => {
   const { username, languages, topics, difficulty } = data;
@@ -13,7 +13,15 @@ const handleFindMatch = async (io, socket, data) => {
     return;
   }
 
-  // Re-joining Attempt
+  // Evict any stale socket registered for this userId (e.g. Arc browser
+  // reconnect that left a ghost socket in the queue from a previous tab).
+  const staleSocketId = userSocketMap.get(userId);
+  if (staleSocketId && staleSocketId !== socket.id) {
+    console.log(`User ${userId}: evicting stale socket ${staleSocketId} in favour of ${socket.id}`);
+    await cleanupSocket(staleSocketId);
+  }
+
+  // Re-joining Attempt (same socket.id re-emitting find-match)
   if (socketState.has(socket.id)) {
     console.log(`User ${userId} (${socket.id}) re-joining — clearing previous search state`);
     await cleanupSocket(socket.id);
@@ -26,6 +34,9 @@ const handleFindMatch = async (io, socket, data) => {
 
   // Mark this user as actively waiting in Redis so concurrent match attempts
   await redisClient.set(`user_state:${userId}`, 'WAITING', { EX: 300 });
+
+  // Register this socket as the canonical socket for this userId.
+  userSocketMap.set(userId, socket.id);
 
   socketState.set(socket.id, {
     userId,
@@ -79,6 +90,11 @@ const handleFindMatch = async (io, socket, data) => {
 const handleDisconnect = async (socket) => {
   console.log('User disconnected:', socket.id);
   await cleanupSocket(socket.id);
+  // Remove from userSocketMap if this is still the registered socket.
+  const userId = socket.userId;
+  if (userId && userSocketMap.get(userId) === socket.id) {
+    userSocketMap.delete(userId);
+  }
 };
 
 const handleCancelMatch = async (socket) => {

@@ -42,7 +42,7 @@ export default function Room() {
   const { data: user, isLoading, isError } = useUserProfile();
   const logout = useLogout();
 
-  const [language, setLanguage] = useState("python");
+  const language = "python";
   const [roomReady, setRoomReady] = useState(false);
   const [questionId, setQuestionId] = useState<string | null>(null);
 

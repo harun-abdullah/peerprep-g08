@@ -1,12 +1,5 @@
 import { type ReactNode } from "react";
-import { Card, CardHeader, CardBody, Select, SelectItem } from "@heroui/react";
-
-const LANGUAGES = [
-  { key: "javascript", label: "JavaScript" },
-  { key: "python", label: "Python" },
-  { key: "java", label: "Java" },
-  { key: "cpp", label: "C++" },
-];
+import { Card, CardHeader, CardBody } from "@heroui/react";
 
 interface EditorPanelProps {
   /** Drop Monaco Editor (or any other editor) here as a child. */

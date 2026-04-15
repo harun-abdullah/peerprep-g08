@@ -1,10 +1,16 @@
 import OpenAI from "openai";
 import "dotenv/config";
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazily-initialized OpenAI client — constructed on first use so that
+// importing this module in tests (where OPENAI_API_KEY is absent) does not
+// throw at module-load time.
+let _openai = null;
+function getOpenAIClient() {
+  if (!_openai) {
+    _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return _openai;
+}
 
 // Rate limiting configuration
 const RATE_LIMITS = {
@@ -178,7 +184,7 @@ Important: Always prioritize teaching over just fixing code.`;
 
     // Call OpenAI API with timeout
     const response = await Promise.race([
-      openai.chat.completions.create({
+      getOpenAIClient().chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [
           {

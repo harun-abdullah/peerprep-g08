@@ -8,13 +8,19 @@ const { parseMatchedCriteria } = require('../utils/queueKeys');
 //   userId           {string}  - user identifier
 //   serializedEntry  {string}  - JSON.stringify({socketId, userId}) - allows quick removal
 //   queues           {Set}     - every queue key this socket is enlisted in
-//   relaxationTimers {Array}   - setTimeout IDs for the 30s / 60s / 120s phases; 
+//   relaxationTimers {Array}   - setTimeout IDs for the 30s / 60s / 120s phases;
 //   statusInterval   {*}       - ID for setInterval function
 //   startedAt        {number}  - Date.now() to compute elapsed time
 //   relaxationLevel  {number}  - 0 = full criteria, 1 = difficulty relaxed, 2 = topic relaxed
 //   criteria         {object}  - { languages, topics, difficulty }
 // }
 const socketState = new Map();
+
+// Reverse map: userId → socketId
+// Tracks the latest active socket for each user so stale sockets (e.g. from
+// Arc browser tab restoration / reconnects) can be evicted before the new
+// socket registers itself in the queue.
+const userSocketMap = new Map();
 
 
 // Attempt to find a match for socket in specified queues. 
@@ -193,7 +199,12 @@ async function cleanupSocket(socketId) {
   await cleanupQueues(socketId);
   await redisClient.set(`user_state:${state.userId}`, 'DISCONNECTED', { EX: 60 });
 
+  // Remove from reverse map only if this socket is still the registered one.
+  if (userSocketMap.get(state.userId) === socketId) {
+    userSocketMap.delete(state.userId);
+  }
+
   socketState.delete(socketId);
 }
 
-module.exports = { socketState, findQueues, cleanupSocket };
+module.exports = { socketState, userSocketMap, findQueues, cleanupSocket };
