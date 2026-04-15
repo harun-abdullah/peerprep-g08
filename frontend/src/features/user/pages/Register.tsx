@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Input, Button, Card, CardBody, CardHeader, Form } from "@heroui/react";
 import { registerUser, verifyOtp, sendOtp } from "../api/auth";
 import EmailOtpModal from "../components/EmailOtpModal";
+import { getErrorMessage } from "../../../utils/error-handler";
 
 export default function Register() {
   const [username, setUsername] = useState("");
@@ -23,8 +24,8 @@ export default function Register() {
       await registerUser({ username, email, password, code });
       // On success, show the OTP modal instead of logging in
       setIsOtpModalOpen(true);
-    } catch (error: any) {
-      setErrorMessage(error.message || "Something went wrong");
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error) || "Something went wrong");
       setIsRegistering(false);
     }
   };
@@ -35,22 +36,16 @@ export default function Register() {
       await verifyOtp(email, otp);
       setIsOtpModalOpen(false);
       // Redirect to login after successful verification
-      navigate("/login", { 
-        state: { message: "Email verified successfully! You can now log in." } 
+      navigate("/login", {
+        state: { message: "Email verified successfully! You can now log in." }
       });
-    } catch (error: any) {
-      throw error; // Let the modal handle the error display
     } finally {
       setIsVerifying(false);
     }
   };
 
   const handleResendOtp = async () => {
-    try {
-      await sendOtp(email);
-    } catch (error: any) {
-      throw error;
-    }
+    await sendOtp(email);
   };
 
   return (

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import io from "socket.io-client";
+import io, { Socket } from "socket.io-client";
 import PageLayout from "../../../shared/components/PageLayout";
 import {
   Card,
@@ -31,7 +31,7 @@ export default function MatchingPage() {
   // State for matching
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [socket, setSocket] = useState<any>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   // Initialize socket connection
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function MatchingPage() {
 
     newSocket.on(
       "match-found",
-      (data: any ) => {
+      (data: { roomUrl?: { roomId: string }; partnerUserId: string }) => {
         console.log("Match found!", data);
         setIsSearching(false);
         // Navigate to collaboration room with the matched partner
