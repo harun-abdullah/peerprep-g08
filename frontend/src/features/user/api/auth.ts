@@ -111,6 +111,29 @@ export const sendPasswordResetOtp = async (email: string) => {
   }
 };
 
+export const uploadProfilePicture = async (userId: string, file: File) => {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Not authenticated");
+
+  const formData = new FormData();
+  formData.append("profilePicture", file);
+
+  try {
+    const response = await axios.patch(
+      `${import.meta.env.VITE_USER_API_URL}/users/${userId}/profile-picture`,
+      formData,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    return response.data;
+  } catch (error) {
+    const axiosError = error as AxiosError<{ message: string }>;
+    if (axiosError.response?.data) {
+      throw new Error(axiosError.response.data.message || "Failed to upload profile picture");
+    }
+    throw new Error(axiosError.message || "An unexpected error occurred");
+  }
+};
+
 export const resetPassword = async (email: string, otp: string, newPassword: string) => {
   try {
     const response = await axios.post(
