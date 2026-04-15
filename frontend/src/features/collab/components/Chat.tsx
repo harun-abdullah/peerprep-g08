@@ -13,9 +13,10 @@ interface Message {
 interface ChatProps {
     roomId: string;
     currentUsername: string;
+    currentUserId: string;
 }
 
-export default function Chat({ roomId, currentUsername }: ChatProps) {
+export default function Chat({ roomId, currentUsername, currentUserId }: ChatProps) {
     const [message, setMessage] = useState("");
     const [messages, setMessages] = useState<Message[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -54,7 +55,7 @@ export default function Chat({ roomId, currentUsername }: ChatProps) {
 
     const sendMessage = () => {
         if (!message.trim()) return;
-        socket.emit("send_message", { roomId, message, senderUsername: currentUsername });
+        socket.emit("send_message", { roomId, message, senderUsername: currentUsername, senderId: currentUserId });
         setMessage("");
     };
 
@@ -108,7 +109,7 @@ export default function Chat({ roomId, currentUsername }: ChatProps) {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Type a message..."
+                    placeholder={`Start message with "@AI" for AI assistance`}
                     rows={1}
                     className="flex-1 border rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
