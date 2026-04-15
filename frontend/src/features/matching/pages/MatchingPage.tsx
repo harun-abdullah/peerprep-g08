@@ -74,6 +74,12 @@ export default function MatchingPage() {
       setError("No match found within 2 minutes. Please try again.");
     });
 
+    newSocket.on("match-error", (data: { message: string }) => {
+      console.error("Match error:", data.message);
+      setIsSearching(false);
+      setError(data.message);
+    });
+
     newSocket.on("disconnect", () => {
       console.log("Disconnected from matching service");
       setError("Connection lost to matching service");
