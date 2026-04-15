@@ -15,7 +15,9 @@ const io = new Server(server, {
   cors: {
     origin: "*", // Adjust for production
     methods: ["GET", "POST"]
-  }
+  },
+  pingInterval: 5000,  // send a ping every 5s
+  pingTimeout: 10000,  // disconnect if no pong within 10s
 });
 
 const PORT = process.env.PORT || 3002;

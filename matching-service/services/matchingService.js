@@ -49,8 +49,8 @@ async function tryMatching(io, socket, queueKey) {
 
     const candidate = JSON.parse(raw);
 
-    // self-check and skip non-waiting
-    if (candidate.socketId === socket.id) {
+    // self-check: same socket OR same user on a different tab
+    if (candidate.socketId === socket.id || candidate.userId === state.userId) {
       await redisClient.lPush(queueKey, raw);
       break;
     }
