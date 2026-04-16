@@ -133,7 +133,6 @@ export default function socketHandler(io) {
             io.to(roomId).emit("receive_message", errorMsg);
           }
         }
-        io.to(roomId).emit("receive_message", msg);
       },
     );
 
